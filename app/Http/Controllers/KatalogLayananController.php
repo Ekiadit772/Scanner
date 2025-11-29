@@ -29,7 +29,7 @@ class KatalogLayananController extends Controller
     public function index()
     {
         $kelLayanans = KelompokLayanan::all();
-        $jenisLayanans= JenisLayanan::all();
+        $jenisLayanans = JenisLayanan::all();
         return view('katalog_layanan.index', compact('kelLayanans', 'jenisLayanans'));
     }
 
@@ -403,7 +403,7 @@ class KatalogLayananController extends Controller
         ]);
 
         DB::table('katalog_layanan_sla')->insert(
-            collect($slaList)->map(fn($s) => [
+            collect($validated)->map(fn($s) => [
                 'katalog_layanan_id' => $layanan->id,
                 'nama' => $s['nama'] ?? null,
                 'deskripsi' => $s['deskripsi'] ?? null,
@@ -416,15 +416,19 @@ class KatalogLayananController extends Controller
         );
 
         DB::table('katalog_layanan_syarat')->insert(
-            collect($syaratList)->map(fn($s) => [
-                'katalog_layanan_id' => $layanan->id,
-                'jenis_syarat_id' => $s['jenis_syarat_id'] ?? null,
-                // 'deskripsi' => $s['deskripsi'] ?? null,
-                'created_by' => auth()->user()->name,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ])->toArray()
+            collect($syaratList)->map(function ($s) use ($layanan) {
+                return [
+                    'katalog_layanan_id' => (int) $layanan->id,
+                    'jenis_syarat_id' => isset($s['jenis_syarat_id'])
+                        ? (int) $s['jenis_syarat_id']
+                        : null,
+                    'created_by' => (string) auth()->user()->name,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            })->toArray()
         );
+
 
         KatalogLayananStatus::create([
             'katalog_layanan_id' => $layanan->id,
